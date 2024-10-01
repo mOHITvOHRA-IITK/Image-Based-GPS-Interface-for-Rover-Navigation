@@ -1,0 +1,9 @@
+bool request_for_GPS
+bool request_to_update_reference_GPS
+float32 ref_lat
+float32 ref_lon
+---
+float32[] x
+float32[] y
+float32[] z
+bool reference_GPS_updated
