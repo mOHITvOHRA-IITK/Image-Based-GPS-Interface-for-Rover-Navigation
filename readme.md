@@ -8,20 +8,20 @@ This repository integrates image-based interaction with GPS data processing and 
 	
 	
 ## Structure of the package
-	* Download the repository.
-	* Create the [Ros Workspace](http://wiki.ros.org/catkin/Tutorials/create_a_workspace) and inside workspcace, create a directory src.
-	* Inside `src` folder, download the repository and build the package.
-	* The package has one c++ client `get_gps_from_map_client.cpp` in the folder `src`, and has correspondind server is defined in `get_gps_from_map_server.py` located in `script` folder of this package.
+* Download the repository.
+* Create the [Ros Workspace](http://wiki.ros.org/catkin/Tutorials/create_a_workspace) and inside workspcace, create a directory src.
+* Inside `src` folder, download the repository and build the package.
+* The package has one c++ client `get_gps_from_map_client.cpp` in the folder `src`, and has correspondind server is defined in `get_gps_from_map_server.py` located in `script` folder of this package.
 
 
 
 ## Workflow of the package
 * First server need to be run by running the command
-			roscd get_gps_from_map
-			rosrun get_gps_from_map get_gps_from_map_server.py
+		roscd get_gps_from_map	
+		rosrun get_gps_from_map get_gps_from_map_server.py
 
 * In second terminal, client need to be run with followinhg command 
-			roscd get_gps_from_map
-			rosrun get_gps_from_map get_gps_from_map_client
+		roscd get_gps_from_map
+		rosrun get_gps_from_map get_gps_from_map_client
 		
 * Once you up the client, you will see some messages on the client terminal. Client will ask you to either update the Reference GPS location or get the transformed GPS or exit the loop. 
