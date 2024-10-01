@@ -17,11 +17,11 @@ This repository integrates image-based interaction with GPS data processing and 
 
 ## Workflow of the package
 * First server need to be run by running the command
-		roscd get_gps_from_map	
-		rosrun get_gps_from_map get_gps_from_map_server.py
+	`roscd get_gps_from_map`	
+	`rosrun get_gps_from_map get_gps_from_map_server.py`
 
 * In second terminal, client need to be run with followinhg command 
-		roscd get_gps_from_map
-		rosrun get_gps_from_map get_gps_from_map_client
+	`roscd get_gps_from_map`
+	`rosrun get_gps_from_map get_gps_from_map_client`
 		
 * Once you up the client, you will see some messages on the client terminal. Client will ask you to either update the Reference GPS location or get the transformed GPS or exit the loop. 
