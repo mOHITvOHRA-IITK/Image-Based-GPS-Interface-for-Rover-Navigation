@@ -35,13 +35,15 @@ exit_loop = False
 ### Variables for reference GPS signal
 ref_latitude = None
 ref_longitude = None
+map_GPS_x = None 
+map_GPS_y = None 
+map_GPS_z = None
 
 
 ### Variables to store final transformed GPS to XYZ
 GPS_converted_x = []
 GPS_converted_y = []
 GPS_converted_z = []
-
 
 
 
@@ -139,7 +141,7 @@ def my_thread():
 def handle_get_gps_from_map_srv(req):
 
     global map_tile, map_img, ref_x_pixel, ref_y_pixel, x_tile, y_tile, selected_pixel_list, exit_loop, \
-           ref_latitude, ref_longitude, \
+           ref_latitude, ref_longitude, map_GPS_x, map_GPS_y, map_GPS_z, \
            GPS_converted_x, GPS_converted_y, GPS_converted_z
 
 
@@ -168,6 +170,11 @@ def handle_get_gps_from_map_srv(req):
 
             ## Now Plotting the green dot at the reference GPS signal
             cv2.circle (map_img, (ref_x_pixel, ref_y_pixel), 3, (0,255,0), -1)
+
+            print (ref_x_pixel, ref_y_pixel)
+
+            map_latitude, map_longitude = convert_pixels_to_GPS(0, 255, x_tile, y_tile)
+            map_GPS_x, map_GPS_y, map_GPS_z = transform_points_from_GPS_to_XYZ(ref_latitude, ref_longitude, 0, map_latitude, map_longitude, 0)
 
 
 
@@ -212,7 +219,7 @@ def handle_get_gps_from_map_srv(req):
 
     print ('service_done')
     
-    return GPS_converted_x, GPS_converted_y, GPS_converted_z, True
+    return GPS_converted_x, GPS_converted_y, GPS_converted_z, map_GPS_x, map_GPS_y, map_GPS_z
         
 
 

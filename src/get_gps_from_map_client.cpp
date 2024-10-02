@@ -3,6 +3,9 @@
 #include <thread>
 #include <mutex>
 #include <chrono>
+#include <sensor_msgs/NavSatFix.h>
+#include <tf/transform_broadcaster.h>
+#include <visualization_msgs/Marker.h>
 
 bool request_for_GPS_ref_update = false;
 bool request_for_GPS = false;
@@ -63,8 +66,49 @@ int main(int argc, char **argv)
    get_gps_from_map::get_gps_from_map_srv srv;
    std::thread th1(update_bool_variable);
 
+   // //// Publisher for publishing the GPS reference data to visualize on RVIZ and corresponding msg defination
+   ros::Publisher GPS_pub = n.advertise<sensor_msgs::NavSatFix>("GPS_ref_topic", 1000);
+   sensor_msgs::NavSatFix msg;
+   msg.header.frame_id = "GPS_ref_frame";
+   msg.status.status = 0;
+   msg.status.service = 0;
+   msg.latitude = ref_latitude;
+   msg.longitude = ref_longitude;
+   msg.altitude = 0.0;
+   msg.position_covariance_type = 2;
+
+   // //// Broadcast the GPS_ref_frame with respect to the map for visualizing in RVIZ
+   tf::TransformBroadcaster br;
+   tf::Transform transform;
+   transform.setOrigin(tf::Vector3(0.0, 0.0, 0.0));
+   transform.setRotation(tf::Quaternion(0, 0, 0, 1));
+
+   // //// Visulaize the marker array correponding to the transformed GPS coordinates into xyz wrt reference GPS coordinates.
+   ros::Publisher vis_pub = n.advertise<visualization_msgs::Marker>("GPS_marker", 0);
+   visualization_msgs::Marker marker;
+   marker.header.frame_id = "GPS_ref_frame";
+   marker.header.stamp = ros::Time();
+   marker.ns = "GPS_ns";
+   marker.id = 0;
+   marker.type = visualization_msgs::Marker::LINE_STRIP;
+   marker.action = visualization_msgs::Marker::ADD;
+   marker.pose.orientation.x = 0.0;
+   marker.pose.orientation.y = 0.0;
+   marker.pose.orientation.z = 0.0;
+   marker.pose.orientation.w = 1.0;
+   marker.scale.x = 1;
+   marker.scale.y = 1.0;
+   marker.scale.z = 1.0;
+   marker.color.a = 1.0; // Don't forget to set the alpha!
+   marker.color.r = 0.0;
+   marker.color.g = 1.0;
+   marker.color.b = 0.0;
+
+   ros::Rate loop_rate(10);
+
    while (ros::ok())
    {
+      br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "map", "GPS_ref_frame"));
 
       if (call_service)
       {
@@ -86,17 +130,36 @@ int main(int argc, char **argv)
 
          client.call(srv);
 
+         transform.setOrigin(tf::Vector3(srv.response.map_GPS_x, srv.response.map_GPS_y, srv.response.map_GPS_z));
+
          std::vector<float> input_x, input_y, input_z;
          input_x = srv.response.x;
          input_y = srv.response.y;
          input_z = srv.response.z;
 
          std::cout << "Received Response:\n";
+
+         marker.points.clear();
+
+         geometry_msgs::Point p;
+         p.x = 0;
+         p.y = 0;
+         p.z = 0;
+         marker.points.push_back(p);
+
          for (int i = 0; i < input_x.size(); i++)
          {
-            std::cout << input_x[i] << " " \
-                      << input_y[i] << " " \
+            std::cout << input_x[i] << " "
+                      << input_y[i] << " "
                       << input_z[i] << "\n";
+
+            geometry_msgs::Point p;
+            p.x = input_x[i];
+            p.y = input_y[i];
+            p.z = input_z[i];
+            marker.points.push_back(p);
+
+            // GPS_marker_array.markers.push_back(marker);
          }
 
          std::lock_guard<std::mutex> l5(mtx_request_for_GPS_ref_update);
@@ -113,6 +176,9 @@ int main(int argc, char **argv)
       {
          break;
       }
+
+      GPS_pub.publish(msg);
+      vis_pub.publish(marker);
    }
 
    th1.join();

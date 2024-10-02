@@ -6,4 +6,6 @@ float32 ref_lon
 float32[] x
 float32[] y
 float32[] z
-bool reference_GPS_updated
+float32 map_GPS_x
+float32 map_GPS_y
+float32 map_GPS_z
