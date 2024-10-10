@@ -9,6 +9,8 @@ import pymap3d as pm
 import numpy as np
 from get_gps_from_map.srv import get_gps_from_map_srv
 import threading
+from sensor_msgs.msg import NavSatFix
+from geometry_msgs.msg import Point
 
 mutex = threading.Lock()
 
@@ -33,17 +35,14 @@ exit_loop = False
 
 
 ### Variables for reference GPS signal
-ref_latitude = None
-ref_longitude = None
-map_GPS_x = None 
-map_GPS_y = None 
-map_GPS_z = None
+reference_GPS = NavSatFix()
 
 
 ### Variables to store final transformed GPS to XYZ
-GPS_converted_x = []
-GPS_converted_y = []
-GPS_converted_z = []
+tile_origin_GPS = NavSatFix()
+tile_origin_xyz_wrt_reference_GPS = Point()
+GPS_output = []
+Transformed_points = []
 
 
 
@@ -141,28 +140,24 @@ def my_thread():
 def handle_get_gps_from_map_srv(req):
 
     global map_tile, map_img, ref_x_pixel, ref_y_pixel, x_tile, y_tile, selected_pixel_list, exit_loop, \
-           ref_latitude, ref_longitude, map_GPS_x, map_GPS_y, map_GPS_z, \
-           GPS_converted_x, GPS_converted_y, GPS_converted_z
-
+           reference_GPS, tile_origin_GPS, tile_origin_xyz_wrt_reference_GPS, GPS_output, Transformed_points
 
     print (f"\n\n\n\n")
     print (f"request_to_update_reference_GPS {req.request_to_update_reference_GPS}\n \
            request_for_GPS: {req.request_for_GPS}\n\n")
 
     if req.request_to_update_reference_GPS:
-        ref_latitude = req.ref_lat
-        ref_longitude = req.ref_lon
+        reference_GPS = req.reference_GPS
 
         ## Downloading the tile image corresponding to reference GPS signal
-        if ref_latitude is not None:
+        if reference_GPS.latitude is not None:
             print ('Tile map Downloading')
-            img_url, x_tile, y_tile, ref_x_pixel, ref_y_pixel, resolution = convert_GPS_to_pixels(ref_latitude, ref_longitude)
+            img_url, x_tile, y_tile, ref_x_pixel, ref_y_pixel, _ = convert_GPS_to_pixels(reference_GPS.latitude, reference_GPS.longitude)
             map_tile = download_image(img_url)
             exit_loop = False
             selected_pixel_list = []
-            GPS_converted_x = []
-            GPS_converted_y = []
-            GPS_converted_z = []
+            GPS_output = []
+            Transformed_points = []
 
             ## Creating a copy of the tile to plot the selected pixels
             map_img = np.zeros( (1*dimension, 1*dimension, 3), np.uint8)
@@ -171,12 +166,12 @@ def handle_get_gps_from_map_srv(req):
             ## Now Plotting the green dot at the reference GPS signal
             cv2.circle (map_img, (ref_x_pixel, ref_y_pixel), 3, (0,255,0), -1)
 
-            print (ref_x_pixel, ref_y_pixel)
+            ## Now calculating the tile map origin GPS cordinates which is at pixel(0,255), \
+            ## and then calculate the relative distcance between tile map GPS and reference GPS for visulizing in RVIZ.
+            tile_origin_GPS.latitude, tile_origin_GPS.longitude = convert_pixels_to_GPS(0, 255, x_tile, y_tile)
+            tile_origin_xyz_wrt_reference_GPS.x, tile_origin_xyz_wrt_reference_GPS.y, tile_origin_xyz_wrt_reference_GPS.z = transform_points_from_GPS_to_XYZ(reference_GPS.latitude, reference_GPS.longitude, 0, tile_origin_GPS.latitude, tile_origin_GPS.longitude, 0)
 
-            map_latitude, map_longitude = convert_pixels_to_GPS(0, 255, x_tile, y_tile)
-            map_GPS_x, map_GPS_y, map_GPS_z = transform_points_from_GPS_to_XYZ(ref_latitude, ref_longitude, 0, map_latitude, map_longitude, 0)
-
-
+           
 
     if req.request_for_GPS:
 
@@ -192,26 +187,27 @@ def handle_get_gps_from_map_srv(req):
 
            
                 ## Transforming selected pixels to GPS cordinates
-                pix_lat, pix_lon = convert_pixels_to_GPS(selected_pixel_list[i][0], selected_pixel_list[i][1], x_tile, y_tile)
+                GPS_for_selected_pixel = NavSatFix()
+                GPS_for_selected_pixel.latitude, GPS_for_selected_pixel.longitude = convert_pixels_to_GPS(selected_pixel_list[i][0], selected_pixel_list[i][1], x_tile, y_tile)
 
 
                 ## Transforming GPS cordinates to XYZ wrt to reference GPS signal
-                x, y, z = transform_points_from_GPS_to_XYZ(pix_lat, pix_lon, 0, ref_latitude, ref_longitude, 0)
+                Transformed_point = Point()
+                Transformed_point.x, Transformed_point.y, Transformed_point.z = transform_points_from_GPS_to_XYZ(GPS_for_selected_pixel.latitude, GPS_for_selected_pixel.longitude, 0, reference_GPS.latitude, reference_GPS.longitude, 0)
 
                 if i == 0:
-                    GPS_converted_x = [x]
-                    GPS_converted_y = [y]
-                    GPS_converted_z = [z]
+                    GPS_output = [GPS_for_selected_pixel]
+                    Transformed_points = [Transformed_point]
                 else:
-                    GPS_converted_x.append(x)
-                    GPS_converted_y.append(y)
-                    GPS_converted_z.append(z)
+                    GPS_output.append(GPS_for_selected_pixel)
+                    Transformed_points.append(Transformed_point)
 
             if exit_loop:
                 print (f"len(selected_pixel_list): {len(selected_pixel_list)}")
 
                 for i in range(len(selected_pixel_list)):
-                    print (f"{GPS_converted_x[i]}, {GPS_converted_y[i]}, {GPS_converted_z[i]}")
+                    print (f"\n{i}, {Transformed_points[i].x}, {Transformed_points[i].y}, {Transformed_points[i].z} \
+                           {GPS_output[i].latitude}, {GPS_output[i].longitude}")
                 
                 break
             
@@ -219,7 +215,7 @@ def handle_get_gps_from_map_srv(req):
 
     print ('service_done')
     
-    return GPS_converted_x, GPS_converted_y, GPS_converted_z, map_GPS_x, map_GPS_y, map_GPS_z
+    return tile_origin_GPS, tile_origin_xyz_wrt_reference_GPS, GPS_output, Transformed_points
         
 
 

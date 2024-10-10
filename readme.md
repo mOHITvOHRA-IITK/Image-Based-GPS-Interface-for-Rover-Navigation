@@ -48,4 +48,6 @@ Tranformed GPS signals visualized in RVIZ
 * In rviz, sometimes AerialMap display is not visible, this is because the correponding RVIZ plugins are not installed. Hence a temporary workaround is build the package [`rviz_satellite`](https://github.com/nobleo/rviz_satellite/tree/ros1) in your workspace and lunch the rviz with following command
 ```
 roslaunch rviz_satellite demo.launch
-``` 
+```
+
+* Sometimes, AerialMap display is not updated automatically, whemn you update the reference GPS signal, so you have to manually update it by clicking the AerialMap display ON/OFF in RVIZ.

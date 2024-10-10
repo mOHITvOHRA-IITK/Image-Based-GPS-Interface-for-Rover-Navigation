@@ -4,6 +4,7 @@
 #include <mutex>
 #include <chrono>
 #include <sensor_msgs/NavSatFix.h>
+#include <geometry_msgs/Point.h>
 #include <tf/transform_broadcaster.h>
 #include <visualization_msgs/Marker.h>
 
@@ -12,8 +13,9 @@ bool request_for_GPS = false;
 bool exit_loop = false;
 bool call_service = false;
 bool service_done = false;
-float ref_latitude = 24.767105598822916;
-float ref_longitude = 55.36987525111471;
+
+sensor_msgs::NavSatFix reference_GPS;
+
 char a;
 std::mutex mtx_request_for_GPS_ref_update, mtx_request_for_GPS, mtx_call_service;
 
@@ -67,13 +69,20 @@ int main(int argc, char **argv)
    std::thread th1(update_bool_variable);
 
    // //// Publisher for publishing the GPS reference data to visualize on RVIZ and corresponding msg defination
+
+   // reference_GPS.latitude = 24.767105598822916;
+   // reference_GPS.longitude = 55.36987525111471;
+
+   reference_GPS.latitude = 24.767456719260924;
+   reference_GPS.longitude = 55.371002554893494;
+
    ros::Publisher GPS_pub = n.advertise<sensor_msgs::NavSatFix>("GPS_ref_topic", 1000);
    sensor_msgs::NavSatFix msg;
    msg.header.frame_id = "GPS_ref_frame";
    msg.status.status = 0;
    msg.status.service = 0;
-   msg.latitude = ref_latitude;
-   msg.longitude = ref_longitude;
+   msg.latitude = reference_GPS.latitude;
+   msg.longitude = reference_GPS.longitude;
    msg.altitude = 0.0;
    msg.position_covariance_type = 2;
 
@@ -115,8 +124,8 @@ int main(int argc, char **argv)
          if (request_for_GPS_ref_update)
          {
             std::cout << "Calling service to upadte reference GPS\n";
-            srv.request.ref_lat = ref_latitude;
-            srv.request.ref_lon = ref_longitude;
+
+            srv.request.reference_GPS = reference_GPS;
             srv.request.request_to_update_reference_GPS = true;
             srv.request.request_for_GPS = false;
          }
@@ -130,14 +139,13 @@ int main(int argc, char **argv)
 
          client.call(srv);
 
-         transform.setOrigin(tf::Vector3(srv.response.map_GPS_x, srv.response.map_GPS_y, srv.response.map_GPS_z));
+         transform.setOrigin(tf::Vector3(srv.response.tile_origin_xyz_wrt_reference_GPS.x, srv.response.tile_origin_xyz_wrt_reference_GPS.y, srv.response.tile_origin_xyz_wrt_reference_GPS.z));
 
-         std::vector<float> input_x, input_y, input_z;
-         input_x = srv.response.x;
-         input_y = srv.response.y;
-         input_z = srv.response.z;
+         std::vector<geometry_msgs::Point> received_points;
+         received_points = srv.response.Transformed_points;
 
-         std::cout << "Received Response:\n";
+         std::vector<sensor_msgs::NavSatFix> received_GPS;
+         received_GPS = srv.response.GPS_output;
 
          marker.points.clear();
 
@@ -147,19 +155,17 @@ int main(int argc, char **argv)
          p.z = 0;
          marker.points.push_back(p);
 
-         for (int i = 0; i < input_x.size(); i++)
+         for (int i = 0; i < received_points.size(); i++)
          {
-            std::cout << input_x[i] << " "
-                      << input_y[i] << " "
-                      << input_z[i] << "\n";
+            std::cout << "\n"
+                      << i << " "
+                      << received_points[i].x << " "
+                      << received_points[i].y << " "
+                      << received_points[i].z << "\n"
+                      << received_GPS[i].latitude << " "
+                      << received_GPS[i].longitude << "\n";
 
-            geometry_msgs::Point p;
-            p.x = input_x[i];
-            p.y = input_y[i];
-            p.z = input_z[i];
-            marker.points.push_back(p);
-
-            // GPS_marker_array.markers.push_back(marker);
+            marker.points.push_back(received_points[i]);
          }
 
          std::lock_guard<std::mutex> l5(mtx_request_for_GPS_ref_update);

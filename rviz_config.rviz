@@ -4,11 +4,17 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
+        - /Global Options1
         - /Status1
+        - /AerialMapDisplay1
         - /AerialMapDisplay1/Status1
+        - /Axes1
         - /Marker1/Status1
         - /Marker1/Namespaces1
-      Splitter Ratio: 0.5
+        - /TF1/Frames1
+        - /TF1/Frames1/GPS_ref_frame1
+        - /TF1/Frames1/map1
+      Splitter Ratio: 0.5137844681739807
     Tree Height: 787
   - Class: rviz/Selection
     Name: Selection
@@ -69,6 +75,38 @@ Visualization Manager:
         GPS_ns: true
       Queue Size: 100
       Value: true
+    - Alpha: 1
+      Class: rviz/Axes
+      Enabled: true
+      Length: 10
+      Name: Axes
+      Radius: 1
+      Reference Frame: map
+      Show Trail: false
+      Value: true
+    - Class: rviz/TF
+      Enabled: true
+      Filter (blacklist): ""
+      Filter (whitelist): ""
+      Frame Timeout: 15
+      Frames:
+        All Enabled: true
+        GPS_ref_frame:
+          Value: true
+        map:
+          Value: true
+      Marker Alpha: 1
+      Marker Scale: 1
+      Name: TF
+      Show Arrows: true
+      Show Axes: true
+      Show Names: true
+      Tree:
+        map:
+          GPS_ref_frame:
+            {}
+      Update Interval: 0
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -97,7 +135,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 172.9139404296875
+      Distance: 286.9100341796875
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -105,17 +143,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 67.45641326904297
-        Y: 76.21562194824219
-        Z: -30.478723526000977
+        X: 118.30351257324219
+        Y: 33.812652587890625
+        Z: -27.446054458618164
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.9247969388961792
+      Pitch: 0.9447973966598511
       Target Frame: base_link
-      Yaw: 4.8635711669921875
+      Yaw: 4.466743469238281
     Saved: ~
 Window Geometry:
   Displays:

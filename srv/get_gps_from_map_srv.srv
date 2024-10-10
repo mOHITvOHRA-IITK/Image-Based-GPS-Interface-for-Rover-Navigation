@@ -1,11 +1,8 @@
 bool request_for_GPS
 bool request_to_update_reference_GPS
-float32 ref_lat
-float32 ref_lon
+sensor_msgs/NavSatFix reference_GPS
 ---
-float32[] x
-float32[] y
-float32[] z
-float32 map_GPS_x
-float32 map_GPS_y
-float32 map_GPS_z
+sensor_msgs/NavSatFix tile_origin_GPS 
+geometry_msgs/Point tile_origin_xyz_wrt_reference_GPS
+sensor_msgs/NavSatFix[] GPS_output
+geometry_msgs/Point[] Transformed_points
